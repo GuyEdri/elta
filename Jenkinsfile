@@ -12,7 +12,7 @@ spec:
     image: jenkins/inbound-agent:latest
     args:
       - "-url"
-      - "http://your-jenkins-url:8080/"
+      - "http://192.168.49.2:32000/"
       - "-workDir"
       - "/home/jenkins/agent"
       - "-secret"
@@ -44,8 +44,6 @@ spec:
       hostPath:
         path: /var/run/docker.sock
         type: Socket
-
-        }
     }
 
     environment {

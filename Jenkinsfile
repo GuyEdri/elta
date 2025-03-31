@@ -1,8 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            yaml """
-apiVersion: v1
+            apiVersion: v1
 kind: Pod
 metadata:
   labels:
@@ -11,13 +10,30 @@ spec:
   containers:
   - name: jnlp
     image: jenkins/inbound-agent:latest
-    args: ['\${computer.jnlpmac}', '\${computer.name}']
+    args:
+      - "-url"
+      - "http://your-jenkins-url:8080/"
+      - "-workDir"
+      - "/home/jenkins/agent"
+      - "-secret"
+      - "${JENKINS_SECRET}"
+      - "-name"
+      - "${JENKINS_AGENT_NAME}"
+    env:
+      - name: JENKINS_SECRET
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.annotations['jenkins.io/secret']
+      - name: JENKINS_AGENT_NAME
+        valueFrom:
+          fieldRef:
+            fieldPath: metadata.annotations['jenkins.io/name']
     volumeMounts:
       - mountPath: /home/jenkins/agent
         name: workspace
   - name: docker
     image: docker:20.10
-    command: [ "sleep", "infinity" ]  # Keeps container alive for executing commands
+    command: ["sleep", "infinity"]
     volumeMounts:
       - mountPath: /var/run/docker.sock
         name: docker-socket
@@ -28,7 +44,7 @@ spec:
       hostPath:
         path: /var/run/docker.sock
         type: Socket
-"""
+
         }
     }
 

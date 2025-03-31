@@ -13,7 +13,7 @@ spec:
     image: jenkins/inbound-agent:latest
     args: 
       - "-url"
-      - "http://192.168.49.2:8080/"
+      - "http://192.168.49.2:32000/"
       - "-workDir"
       - "/home/jenkins/agent"
       - "-secret"

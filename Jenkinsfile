@@ -18,9 +18,9 @@ pipeline {
         }
     stage('Build Docker Image') {
     	steps {
-        	script {
-            	    // Build the Docker image
-            	    cd 'HelloWorldApp'
+       		script {
+                    // Navigate to the app directory
+                    dir('HelloWorldApp') {
             	    sh 'docker build -t $DOCKER_IMAGE .'
 
             // Log in to Docker Hub using Jenkins credentials
@@ -33,6 +33,7 @@ pipeline {
             sh 'docker push $DOCKER_IMAGE'
         }
     }
+ }
 }
         stage('Deploy to Build Namespace') {
             steps {
@@ -42,7 +43,7 @@ pipeline {
                     
                     // Deploy to the build namespace
                     sh """
-                    kubectl apply -f ../helloworldapp.yaml -n $BUILD_NAMESPACE
+                    kubectl apply -f helloworldapp.yaml -n $BUILD_NAMESPACE
                     """
                     
                     // Wait for the deployment to complete
@@ -61,7 +62,7 @@ pipeline {
                     
                     // Deploy to the production namespace
                     sh """
-                    kubectl apply -f ../helloworldapp.yaml -n $PROD_NAMESPACE
+                    kubectl apply -f helloworldapp.yaml -n $PROD_NAMESPACE
                     """
                     
                     // Wait for the deployment to complete in the production namespace

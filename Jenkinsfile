@@ -1,57 +1,84 @@
 pipeline {
     agent any
+
     environment {
-        REGISTRY = 'guyedri'  // Change to your Docker Hub username
-        IMAGE_NAME = 'helloworldapp'  // The name of your Docker image
-        DOCKER_IMAGE = "${REGISTRY}/${IMAGE_NAME}:latest"
+        DOCKER_IMAGE = 'guyedri/helloworldapp:latest'  // Replace with your Docker Hub image
+        BUILD_NAMESPACE = 'build'  // The namespace where the build will occur
+        PROD_NAMESPACE = 'production'  // The namespace where the application will be deployed to production
     }
+
     stages {
-        stage('Checkout') {
-            steps {
-                // Checkout the code from GitHub
-                git 'https://github.com/GuyEdri/elta.git'
-            }
-        }
-
-        stage('Build Docker Image') {
+        stage('Clone Repository') {
             steps {
                 script {
-                    // Build the Docker image for the .NET Core application
-		    sh 'cd HelloWorldApp'
-                    sh 'docker build -t ${DOCKER_IMAGE} .'
+                    // Checkout the Git repository
+                    checkout scm
                 }
             }
         }
+    stage('Build Docker Image') {
+    	steps {
+        	script {
+            	    // Build the Docker image
+            	    cd 'HelloWorldApp'
+            	    sh 'docker build -t $DOCKER_IMAGE .'
 
-        stage('Push Docker Image to Registry') {
-            steps {
-                script {
-                    // Log in to Docker Hub and push the image
-                    withDockerRegistry([credentialsId: 'dockerhub', url: 'https://index.docker.io/v1/']) {
-                        sh 'docker push ${DOCKER_IMAGE}'
-                    }
-                }
+            // Log in to Docker Hub using Jenkins credentials
+            withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                // Log in to Docker Hub
+                sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
             }
-        }
 
-        stage('Deploy to Kubernetes') {
+            // Push the Docker image to the registry
+            sh 'docker push $DOCKER_IMAGE'
+        }
+    }
+}
+        stage('Deploy to Build Namespace') {
             steps {
                 script {
-                    // Use kubectl to deploy the application into the `deploy-namespace`
+                    // Ensure the build namespace exists
+                    sh "kubectl get namespace $BUILD_NAMESPACE || kubectl create namespace $BUILD_NAMESPACE"
+                    
+                    // Deploy to the build namespace
                     sh """
-                        kubectl --namespace=deploy set image deployment/helloworldapp helloworldapp=${DOCKER_IMAGE}
-                        kubectl --namespace=deploy rollout status deployment/helloworldapp
+                    kubectl apply -f ../helloworldapp.yaml -n $BUILD_NAMESPACE
+                    """
+                    
+                    // Wait for the deployment to complete
+                    sh """
+                    kubectl rollout status deployment/helloworldapp -n $BUILD_NAMESPACE
+                    """
+                }
+            }
+        }
+
+        stage('Move to Production Namespace') {
+            steps {
+                script {
+                    // Ensure the production namespace exists
+                    sh "kubectl get namespace $PROD_NAMESPACE || kubectl create namespace $PROD_NAMESPACE"
+                    
+                    // Deploy to the production namespace
+                    sh """
+                    kubectl apply -f ../helloworldapp.yaml -n $PROD_NAMESPACE
+                    """
+                    
+                    // Wait for the deployment to complete in the production namespace
+                    sh """
+                    kubectl rollout status deployment/helloworldapp -n $PROD_NAMESPACE
                     """
                 }
             }
         }
     }
+
     post {
         success {
-            echo 'Deployment to Kubernetes was successful!'
+            echo 'Deployment was successful!'
         }
         failure {
-            echo 'Something went wrong. Please check the logs.'
+            echo 'Deployment failed.'
         }
     }
 }

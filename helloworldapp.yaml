@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: helloworldapp
+  namespace: build
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: helloworldapp
+  template:
+    metadata:
+      labels:
+        app: helloworldapp
+    spec:
+      containers:
+      - name: helloworldapp
+        image: guyedri/helloworldapp:latest
+        ports:
+        - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: helloworldapp-service
+  namespace: build
+spec:
+  selector:
+    app: helloworldapp
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000
+      nodePort: 30080  # Choose an available NodePort (usually between 30000-32767)
+  type: NodePort
+

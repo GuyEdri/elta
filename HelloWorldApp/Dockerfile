@@ -24,7 +24,7 @@ WORKDIR /app
 COPY --from=build /out .
 
 # Expose port 80
-EXPOSE 80
+EXPOSE 3000
 
 # Set the entry point for the container
 ENTRYPOINT ["dotnet", "HelloWorldApp.dll"]

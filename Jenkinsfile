@@ -6,36 +6,15 @@ apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    jenkins/agent: "true"
+    jenkins-agent: 'true'
 spec:
   containers:
   - name: jnlp
-    image: jenkins/inbound-agent:latest
-    args: 
-      - "-url"
-      - "http://192.168.49.2:32000/"
-      - "-workDir"
-      - "/home/jenkins/agent"
-      - "-secret"
-      - "\${JENKINS_SECRET}"
-      - "-name"
-      - "\${JENKINS_AGENT_NAME}"
-    volumeMounts:
-      - mountPath: /home/jenkins/agent
-        name: workspace
+    image: guyedri/elta-agent
+    args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
   - name: docker
-    image: docker:20.10
-    command: ["sleep", "infinity"]
-    volumeMounts:
-      - mountPath: /var/run/docker.sock
-        name: docker-socket
-  volumes:
-    - name: workspace
-      emptyDir: {}
-    - name: docker-socket
-      hostPath:
-        path: /var/run/docker.sock
-        type: Socket
+    image: docker:latest
+    command: ['sleep', 'infinity']
             """
         }
     }

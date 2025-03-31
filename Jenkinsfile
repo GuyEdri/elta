@@ -5,16 +5,29 @@ pipeline {
 apiVersion: v1
 kind: Pod
 metadata:
-  labels:
-    jenkins-agent: 'true'
+  name: jenkins-agent
+  namespace: devops
 spec:
   containers:
   - name: jnlp
     image: guyedri/elta-agent
-    args: ['\$(JENKINS_SECRET)', '\$(JENKINS_NAME)']
-  - name: docker
-    image: docker:latest
-    command: ['sleep', 'infinity']
+    volumeMounts:
+    - mountPath: /home/jenkins
+      name: workspace-volume
+  volumes:
+  - name: workspace-volume
+    emptyDir: {}
+  initContainers:
+  - name: init-permissions
+    image: busybox
+    command:
+    - sh
+    - -c
+    - "mkdir -p /home/jenkins && chmod -R 777 /home/jenkins"
+    volumeMounts:
+    - mountPath: /home/jenkins
+      name: workspace-volume
+
             """
         }
     }

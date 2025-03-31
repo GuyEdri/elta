@@ -1,7 +1,7 @@
 pipeline {
      agent {
         kubernetes {
-            yaml """
+                        yaml """
 apiVersion: v1
 kind: Pod
 metadata:
@@ -17,6 +17,13 @@ spec:
       volumeMounts:
         - name: docker-socket
           mountPath: /var/run/docker.sock
+      env:
+        - name: JENKINS_URL
+          value: "http://192.168.49.2:32000"  # Your Jenkins master URL
+        - name: JENKINS_SECRET
+          value: "elta"  # Your secret key
+        - name: JENKINS_AGENT_NAME
+          value: "elta-agent"  # Unique agent name
   volumes:
     - name: docker-socket
       hostPath:

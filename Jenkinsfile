@@ -1,7 +1,8 @@
 pipeline {
     agent {
         kubernetes {
-            apiVersion: v1
+            yaml """
+apiVersion: v1
 kind: Pod
 metadata:
   labels:
@@ -10,24 +11,15 @@ spec:
   containers:
   - name: jnlp
     image: jenkins/inbound-agent:latest
-    args:
+    args: 
       - "-url"
       - "http://192.168.49.2:32000/"
       - "-workDir"
       - "/home/jenkins/agent"
       - "-secret"
-      - "${JENKINS_SECRET}"
+      - "\${JENKINS_SECRET}"
       - "-name"
-      - "${JENKINS_AGENT_NAME}"
-    env:
-      - name: JENKINS_SECRET
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.annotations['jenkins.io/secret']
-      - name: JENKINS_AGENT_NAME
-        valueFrom:
-          fieldRef:
-            fieldPath: metadata.annotations['jenkins.io/name']
+      - "\${JENKINS_AGENT_NAME}"
     volumeMounts:
       - mountPath: /home/jenkins/agent
         name: workspace
@@ -44,12 +36,14 @@ spec:
       hostPath:
         path: /var/run/docker.sock
         type: Socket
+            """
+        }
     }
 
     environment {
-        DOCKER_IMAGE = 'guyedri/helloworldapp:latest'  // Replace with your Docker Hub image
-        BUILD_NAMESPACE = 'build'  // The namespace where the build will occur
-        PROD_NAMESPACE = 'production'  // The namespace where the application will be deployed to production
+        DOCKER_IMAGE = 'guyedri/helloworldapp:latest'
+        BUILD_NAMESPACE = 'build'
+        PROD_NAMESPACE = 'production'
     }
 
     stages {
@@ -60,25 +54,19 @@ spec:
                 }
             }
         }
-
         stage('Build Docker Image') {
             steps {
-                container('docker') { // Run this stage inside the 'docker' container
-                    script {
-                        dir('HelloWorldApp') {
-                            sh 'docker build -t $DOCKER_IMAGE .'
-
-                            withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
-                                sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
-                            }
-
-                            sh 'docker push $DOCKER_IMAGE'
+                script {
+                    dir('HelloWorldApp') {
+                        sh 'docker build -t $DOCKER_IMAGE .'
+                        withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                            sh 'echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin'
                         }
+                        sh 'docker push $DOCKER_IMAGE'
                     }
                 }
             }
         }
-
         stage('Deploy to Build Namespace') {
             steps {
                 script {
@@ -88,7 +76,6 @@ spec:
                 }
             }
         }
-
         stage('Move to Production Namespace') {
             steps {
                 script {

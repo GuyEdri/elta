@@ -11,14 +11,22 @@ pipeline {
         PROD_NAMESPACE = 'production'
     }
 
-    stages {
+     stages {
         stage('Clone Repository') {
             steps {
                 script {
-                    checkout scm
+                    checkout([
+                        $class: 'GitSCM',
+                        branches: [[name: '*/main']],
+                        userRemoteConfigs: [[
+                            url: 'https://github.com/GuyEdri/elta.git',
+                            credentialsId: 'github'
+                        ]]
+                    ])
                 }
             }
         }
+    }
         stage('Build Docker Image') {
             steps {
                 script {

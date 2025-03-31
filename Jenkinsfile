@@ -1,33 +1,7 @@
 pipeline {
     agent {
         kubernetes {
-            yaml """
-apiVersion: v1
-kind: Pod
-metadata:
-  name: jenkins-agent
-spec:
-  containers:
-  - name: jnlp
-    image: guyedri/elta-agent
-    volumeMounts:
-    - mountPath: /home/jenkins
-      name: workspace-volume
-  volumes:
-  - name: workspace-volume
-    emptyDir: {}
-  initContainers:
-  - name: init-permissions
-    image: busybox
-    command:
-    - sh
-    - -c
-    - "mkdir -p /home/jenkins && chmod -R 777 /home/jenkins"
-    volumeMounts:
-    - mountPath: /home/jenkins
-      name: workspace-volume
-
-            """
+            label 'jenkins-agent'
         }
     }
 

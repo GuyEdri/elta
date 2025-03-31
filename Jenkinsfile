@@ -1,5 +1,29 @@
 pipeline {
-    agent any
+     agent {
+        kubernetes {
+            yaml """
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins-agent: "true"
+spec:
+  containers:
+    - name: docker-builder
+      image: docker:24.0
+      command:
+        - cat
+      tty: true
+      volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+  volumes:
+    - name: docker-socket
+      hostPath:
+        path: /var/run/docker.sock
+"""
+        }
+    }
 
     environment {
         DOCKER_IMAGE = 'guyedri/helloworldapp:latest'  // Replace with your Docker Hub image
